@@ -27,7 +27,7 @@ The Sentinel guard was built and measured by one person with AI help, on attacks
 - `submissions/*.jsonl`: attacks and harmless prompts (format in CONTRIBUTING.md). `seed-*.jsonl` are written by the project builder; `community-*.jsonl` come from pull requests.
 - `arena run` scores every submission with a guard and writes `site/index.html` and `site/results.json`.
 - Default guard: in-process [ai-sentinel](https://github.com/yurtseveronder-design/ai-sentinel) rules plus the keyword layer of [sentinel-semantic](https://github.com/yurtseveronder-design/sentinel-semantic), installed from their `main` branches in CI. The optional trained classifier is not enabled, matching Sentinel's default.
-- Any other guard can be scored: `--guard python:mymodule:myfunc` (function takes text, returns True if blocked) or `--guard http:<gateway-url>`. A guard that cannot give a verdict aborts the run; no verdict is never counted as a pass.
+- Any other guard can be scored (see [docs/BRING-YOUR-OWN-GUARD.md](docs/BRING-YOUR-OWN-GUARD.md)): `--guard python:path/to/file.py:func` or `--guard python:mymodule:myfunc` (function takes text, returns True if blocked) or `--guard http:<gateway-url>`. A guard that cannot give a verdict aborts the run; no verdict is never counted as a pass.
 - Results page: no JavaScript, no external requests, all submitted text escaped.
 
 ```bash

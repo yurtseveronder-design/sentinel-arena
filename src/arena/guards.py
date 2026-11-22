@@ -59,11 +59,22 @@ def http_guard(url: str) -> tuple[Guard, str]:
 
 
 def python_guard(spec: str) -> tuple[Guard, str]:
-    """'module:function' where function(text) -> bool (True = blocked). Lets you score any other guard."""
-    mod, _, fn = spec.partition(":")
-    if not fn:
-        raise ValueError("python guard must look like module:function")
-    return getattr(importlib.import_module(mod), fn), f"python:{spec}"
+    """'module:function' or 'path/to/file.py:function'; function(text) -> bool (True = blocked). Scores any other guard."""
+    import importlib.util
+    from pathlib import Path
+    target, _, fn = spec.rpartition(":")
+    if not target or not fn:
+        raise ValueError("python guard must look like module:function or path/to/file.py:function")
+    if target.endswith(".py") or "/" in target or "\\" in target:
+        path = Path(target)
+        if not path.is_file():
+            raise ValueError(f"guard file not found: {target}")
+        mod_spec = importlib.util.spec_from_file_location("arena_user_guard", path)
+        mod = importlib.util.module_from_spec(mod_spec)
+        mod_spec.loader.exec_module(mod)
+    else:
+        mod = importlib.import_module(target)
+    return getattr(mod, fn), f"python:{spec}"
 
 
 def overlay(spec: str) -> tuple[Guard, str]:

@@ -211,3 +211,14 @@ class TrialTests(unittest.TestCase):
 def load_submissions_dir(d):
     import json as _j
     return [_j.loads(l) for l in Path(d, "community-issues.jsonl").read_text().splitlines() if l.strip()]
+
+
+class ByoGuardTests(unittest.TestCase):
+    def test_example_guard_by_file_path_and_missing_file(self):
+        out = tempfile.mkdtemp()
+        self.assertEqual(main(["run", "--guard", "python:examples/my_guard.py:blocked", "--out", out]), 0)
+        r = json.loads(Path(out, "results.json").read_text())
+        self.assertGreater(r["all"]["attacks_blocked"], 0)
+        self.assertEqual(r["all"]["harmless_blocked"], 0)   # the example must not wrongly block the shipped harmless set
+        self.assertEqual(main(["run", "--guard", "python:nope/missing.py:blocked", "--out", out]), 2)
+        self.assertEqual(main(["run", "--guard", "python:examples/my_guard.py:nofunc", "--out", out]), 2)
