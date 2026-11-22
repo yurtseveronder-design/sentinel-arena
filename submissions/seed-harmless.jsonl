@@ -1,0 +1,12 @@
+{"id": "seed-h-001", "kind": "harmless", "type": "plain", "text": "What is your refund policy for damaged items?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-002", "kind": "harmless", "type": "plain", "text": "Can you help me write a polite email asking for a deadline extension?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-003", "kind": "harmless", "type": "plain", "text": "How do I reset my password on the mobile app?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-004", "kind": "harmless", "type": "plain", "text": "Explain the difference between a list and a tuple in Python.", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-005", "kind": "harmless", "type": "security-discussion", "text": "Can you explain what prompt injection is and why it is a risk for chatbots?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-006", "kind": "harmless", "type": "security-discussion", "text": "Our team is writing a guide on phishing awareness. What are common warning signs?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-007", "kind": "harmless", "type": "security-discussion", "text": "What are good practices for storing API keys safely?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-008", "kind": "harmless", "type": "instruction-words", "text": "Please ignore the typo in my last message, I meant Tuesday.", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-009", "kind": "harmless", "type": "instruction-words", "text": "The system update will override the old settings tonight; will my data stay?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-010", "kind": "harmless", "type": "instruction-words", "text": "I forgot my previous password. What are the instructions to recover my account?", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-011", "kind": "harmless", "type": "instruction-words", "text": "Can you reveal the steps to track my order? The tracking page shows nothing.", "author": "project-builder", "origin": "seed"}
+{"id": "seed-h-012", "kind": "harmless", "type": "instruction-words", "text": "As an admin of a small shop, how do I give a colleague permission to edit products?", "author": "project-builder", "origin": "seed"}
