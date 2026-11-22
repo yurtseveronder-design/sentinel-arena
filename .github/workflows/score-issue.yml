@@ -1,0 +1,36 @@
+name: score issue
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  score:
+    if: contains(github.event.issue.labels.*.name, 'try-attack')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4          # default branch code only; the issue text is never executed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install .
+          pip install "git+https://github.com/yurtseveronder-design/ai-sentinel.git" "git+https://github.com/yurtseveronder-design/sentinel-semantic.git"
+      - name: Score (text passed as data through a file)
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          printf '%s' "$ISSUE_BODY" > body.txt
+          arena try --body-file body.txt --number "$ISSUE_NUMBER" --result-file result.txt > reply.md || { echo "No verdict (internal error). A maintainer will look." > reply.md; echo no_verdict > result.txt; }
+      - name: Reply and label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body-file reply.md
+          R=$(cat result.txt | tr '_' '-')
+          gh label create "$R" --force >/dev/null 2>&1 || true
+          gh issue edit "$ISSUE_NUMBER" --add-label "$R" || true

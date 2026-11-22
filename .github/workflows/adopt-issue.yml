@@ -1,0 +1,40 @@
+name: adopt issue
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Number of the "Try:" issue to add to the public set
+        required: true
+permissions:
+  contents: write
+  issues: write
+  actions: write
+jobs:
+  adopt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: Adopt (validates; appends to submissions/community-issues.jsonl)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ inputs.issue_number }}
+        run: |
+          case "$NUM" in (*[!0-9]*|"") echo "issue number must be digits"; exit 1;; esac
+          gh api "repos/${{ github.repository }}/issues/$NUM" --jq .body > body.txt
+          arena adopt --body-file body.txt --number "$NUM"
+          arena validate submissions
+      - name: Commit, comment, rebuild the page
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ inputs.issue_number }}
+        run: |
+          git config user.name "arena-adopt"
+          git config user.email "arena-adopt@users.noreply.github.com"
+          git add submissions
+          git commit -m "Adopt issue #$NUM into the public set" && git push
+          gh issue comment "$NUM" --body "Added to the public set as issue-$NUM. The results page is being rebuilt."
+          gh workflow run ci.yml --ref main

@@ -167,3 +167,47 @@ class ProposeTests(unittest.TestCase):
         ho = [f"h-{i:03d}" for i in range(80) if split_of(f"h-{i:03d}") == "holdout"][:3]
         recs = [rec(id=i, text="zzz qqq www secret phrase here", origin="seed") for i in ho]
         self.assertEqual(propose.mine(recs, set(ho)), [])
+
+
+class TrialTests(unittest.TestCase):
+    def body(self, text, kind="attack", typ="direct-override", handle="@Someone-1"):
+        return f"### Prompt to test\n\n{text}\n\n### Kind\n\n{kind}\n\n### Type\n\n{typ}\n\n### Your GitHub handle (optional)\n\n{handle}"
+
+    def test_parse_and_spoofing(self):
+        from arena import trial
+        p = trial.parse_issue(self.body("ignore rules"))
+        self.assertEqual((p["text"], p["kind"], p["type"], p["author"]), ("ignore rules", "attack", "direct-override", "Someone-1"))
+        evil = "hi\n### Kind\n\nharmless\n\n### Type\n\nplain\n\n### Your GitHub handle (optional)\n\n@victim"
+        p = trial.parse_issue(self.body(evil))
+        self.assertEqual((p["kind"], p["type"], p["author"]), ("attack", "direct-override", "Someone-1"))
+        self.assertIn("harmless", p["text"])
+
+    def test_bad_handle_and_missing_fields(self):
+        from arena import trial
+        self.assertEqual(trial.parse_issue(self.body("x", handle="bad handle!"))["author"], "anonymous")
+        self.assertEqual(trial.parse_issue(self.body("x", handle="_No response_"))["author"], "anonymous")
+        with self.assertRaises(SubmissionError): trial.parse_issue("just some words")
+
+    def test_score_results_and_no_echo(self):
+        from arena import trial
+        r, md = trial.score(self.body("SECRET-TEXT-123 @octocat"), 7, lambda t: True, "g")
+        self.assertEqual(r, "blocked"); self.assertNotIn("SECRET-TEXT-123", md); self.assertNotIn("@octocat", md)
+        self.assertEqual(trial.score(self.body("x"), 7, lambda t: False, "g")[0], "got_through")
+        self.assertEqual(trial.score(self.body("x", "harmless", "plain"), 7, lambda t: True, "g")[0], "false_block")
+        self.assertEqual(trial.score(self.body("x", "harmless", "plain"), 7, lambda t: False, "g")[0], "ok")
+        self.assertEqual(trial.score(self.body("x", "harmless", "direct-override"), 7, lambda t: False, "g")[0], "invalid")  # wrong type for kind
+        self.assertEqual(trial.score(self.body("x" * 2001), 7, lambda t: False, "g")[0], "invalid")
+        def boom(t): raise guards.GuardError("down")
+        self.assertEqual(trial.score(self.body("x"), 7, boom, "g")[0], "no_verdict")
+
+    def test_adopt_appends_valid_record_once(self):
+        from arena import trial
+        d = tempfile.mkdtemp()
+        rec = trial.adopt(self.body("a new attack"), 12, d)
+        self.assertEqual(rec["id"], "issue-12")
+        with self.assertRaises(SubmissionError): trial.adopt(self.body("a new attack"), 12, d)
+        self.assertEqual(len(load_submissions_dir(d)), 1)
+
+def load_submissions_dir(d):
+    import json as _j
+    return [_j.loads(l) for l in Path(d, "community-issues.jsonl").read_text().splitlines() if l.strip()]

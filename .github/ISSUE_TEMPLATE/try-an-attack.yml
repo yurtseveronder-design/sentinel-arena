@@ -1,0 +1,55 @@
+name: Try an attack (instant verdict)
+description: Paste a prompt and get a "blocked / got through" answer in about a minute. No fork needed.
+title: "Try: "
+labels: ["try-attack"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Your text is public. Do not include real secrets or personal data. It is only ever scored by a program and is never run as instructions. Nothing is added to the public results until a maintainer adopts it.
+  - type: textarea
+    id: text
+    attributes:
+      label: Prompt to test
+      description: Up to 2000 characters.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      description: Is this an attack, or a harmless prompt that might get wrongly blocked?
+      options:
+        - attack
+        - harmless
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: For an attack pick an attack type; for a harmless prompt pick plain, security-discussion or instruction-words.
+      options:
+        - direct-override
+        - persona-roleplay
+        - hypothetical-fiction
+        - fake-turns
+        - code-or-data
+        - authority
+        - exfiltration-link
+        - tool-misuse
+        - pasted-content
+        - encoding
+        - lookalike-chars
+        - non-english
+        - prompt-extraction
+        - plain
+        - security-discussion
+        - instruction-words
+    validations:
+      required: true
+  - type: input
+    id: handle
+    attributes:
+      label: Your GitHub handle (optional)
+      description: Used for credit if a maintainer adopts it. Leave empty to stay anonymous.

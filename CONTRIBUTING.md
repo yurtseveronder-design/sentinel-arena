@@ -1,5 +1,7 @@
 # Add an attack (or a harmless prompt)
 
+Quickest: use the [Try an attack form](https://github.com/yurtseveronder-design/sentinel-arena/issues/new?template=try-an-attack.yml) for an instant verdict. To add many at once, use a pull request as below.
+
 1. Fork the repository.
 2. Add one new file: `submissions/community-<your-handle>.jsonl`. One JSON object per line:
 

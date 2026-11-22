@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import digest, gate, guards, propose, report
+from . import digest, gate, guards, propose, report, trial
 from .runner import run
 from .schema import SubmissionError, load_submissions
 
@@ -41,7 +41,39 @@ def main(argv=None) -> int:
     pr.add_argument("--guard", default="sentinel-local")
     pr.add_argument("--out", default="proposals/candidates.json")
     pr.add_argument("--min-support", type=int, default=2)
+    t = sub.add_parser("try")
+    t.add_argument("--body-file", required=True)
+    t.add_argument("--number", type=int, required=True)
+    t.add_argument("--guard", default="sentinel-local")
+    t.add_argument("--result-file", default=None)
+    ad = sub.add_parser("adopt")
+    ad.add_argument("--body-file", required=True)
+    ad.add_argument("--number", type=int, required=True)
+    ad.add_argument("--dir", default="submissions")
     a = p.parse_args(argv)
+    if a.cmd in ("try", "adopt"):
+        try:
+            body = Path(a.body_file).read_text(encoding="utf-8")
+            if a.cmd == "adopt":
+                rec = trial.adopt(body, a.number, a.dir)
+                print(f"adopted {rec['id']} ({rec['kind']}, {rec['type']})")
+                return 0
+            try:
+                guard, label = guards.build(a.guard)
+            except (ValueError, ImportError, AttributeError) as e:
+                print(f"setup error: {e}", file=sys.stderr)
+                return 2
+            result, md = trial.score(body, a.number, guard, label)
+        except SubmissionError as e:
+            print(f"invalid: {e}", file=sys.stderr)
+            return 1
+        except OSError as e:
+            print(f"setup error: {e}", file=sys.stderr)
+            return 2
+        if a.result_file:
+            Path(a.result_file).write_text(result, encoding="utf-8")
+        print(md)
+        return 0
     if a.cmd == "propose":
         try:
             records = load_submissions(a.dir)
