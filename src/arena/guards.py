@@ -66,10 +66,23 @@ def python_guard(spec: str) -> tuple[Guard, str]:
     return getattr(importlib.import_module(mod), fn), f"python:{spec}"
 
 
+def overlay(spec: str) -> tuple[Guard, str]:
+    """overlay:<phrases.json>: the baseline Sentinel guard plus extra block-phrases. Additive only: it can add blocks, never allow."""
+    import json as _json
+    from pathlib import Path
+    from .propose import overlay_guard
+    base, label = sentinel_local()
+    data = _json.loads(Path(spec).read_text(encoding="utf-8"))
+    phrases = [c["phrase"] if isinstance(c, dict) else c for c in data["candidates"]]
+    return overlay_guard(base, phrases), f"{label} + overlay of {len(phrases)} reviewed phrase(s)"
+
+
 def build(spec: str) -> tuple[Guard, str]:
     kind, _, rest = spec.partition(":")
     if spec == "sentinel-local":
         return sentinel_local()
+    if kind == "overlay":
+        return overlay(rest)
     if kind == "http":
         return http_guard(rest if rest.startswith("http") else "http:" + rest)
     if kind == "python":

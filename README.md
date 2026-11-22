@@ -35,6 +35,12 @@ Each submission is assigned to a `dev` or `holdout` split by a hash of its id (a
 arena digest --results site/results.json   # after `arena run --out site`
 ```
 
+## Learning loop (proposals only; Sentinel is not touched)
+
+`arena propose` mines candidate block-phrases from `dev` gaps only: a word sequence must appear in at least two gap attacks and in no harmless prompt. Output goes to `proposals/candidates.json` and is applied nowhere. To see what a reviewed list would do: `arena run --guard overlay:proposals/candidates.json --out site2`, then `arena gate`. An overlay can only add blocks, never allow anything. Adopting a phrase into `ai-sentinel` itself is a separate, deliberate, human-made release.
+
+Honest warning: with the current builder-written seed set the miner mostly memorises my own test wording (for example the fake domain `evil.example`). It stops dev attacks but not holdout ones, which is exactly what the gate is there to expose. It becomes useful only with many independent community submissions.
+
 ## Promotion gate (read-only)
 
 `arena gate --baseline base/results.json --candidate cand/results.json` compares two runs of the same submission set (run `arena run` once in an environment with the current guard, once with a candidate change). Exit code 0 = PASS, 1 = FAIL, 3 = INCONCLUSIVE.
