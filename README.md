@@ -2,6 +2,8 @@
 
 A public challenge: **submit a prompt-injection attack by pull request and see whether the guard stops it.**
 
+**Live results: https://yurtseveronder-design.github.io/sentinel-arena/**
+
 CI scores every submission against the guard and publishes a static results page listing what was stopped, what got through, and which harmless prompts were wrongly blocked.
 
 ## Why this exists
