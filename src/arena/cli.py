@@ -1,6 +1,7 @@
 """arena validate [dir]                      check submissions only (exit 1 on a bad file)
 arena digest                                 compare with the last snapshot, write history/ and known-gaps.jsonl
 arena run --guard sentinel-local --out site  score submissions, write site/index.html and site/results.json
+arena gate --baseline a.json --candidate b.json  PASS=0, FAIL=1, INCONCLUSIVE=3
 Exit codes: 0 ok, 1 invalid submissions, 2 setup/guard error (no verdict is never treated as a pass)."""
 from __future__ import annotations
 
@@ -9,7 +10,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import digest, guards, report
+from . import digest, gate, guards, report
 from .runner import run
 from .schema import SubmissionError, load_submissions
 
@@ -28,7 +29,22 @@ def main(argv=None) -> int:
     d.add_argument("--history", default="history")
     d.add_argument("--gaps", default="known-gaps.jsonl")
     d.add_argument("--date", default=None)
+    g = sub.add_parser("gate")
+    g.add_argument("--baseline", required=True)
+    g.add_argument("--candidate", required=True)
+    g.add_argument("--config", default=None, help="optional JSON overriding gate defaults")
     a = p.parse_args(argv)
+    if a.cmd == "gate":
+        try:
+            base = json.loads(Path(a.baseline).read_text(encoding="utf-8"))
+            cand = json.loads(Path(a.candidate).read_text(encoding="utf-8"))
+            cfg = json.loads(Path(a.config).read_text(encoding="utf-8")) if a.config else None
+            r = gate.compare(base, cand, cfg)
+        except (OSError, ValueError, KeyError) as e:
+            print(f"setup error: {e}", file=sys.stderr)
+            return 2
+        print(gate.markdown(r, base, cand))
+        return {"PASS": 0, "FAIL": 1, "INCONCLUSIVE": 3}[r["verdict"]]
     if a.cmd == "digest":
         import datetime
         try:

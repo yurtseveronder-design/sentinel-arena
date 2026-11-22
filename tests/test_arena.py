@@ -104,3 +104,31 @@ class DigestTests(unittest.TestCase):
         self.assertEqual([split_of(i) for i in ids], [split_of(i) for i in ids])
         share = sum(split_of(i) == "holdout" for i in ids) / len(ids)
         self.assertTrue(0.15 < share < 0.25, share)
+
+
+class GateTests(unittest.TestCase):
+    def _res(self, blocked_ids, fb=(), n_ho_att=40, n_ho_h=20, lat=0.1, sha="s"):
+        att = [{"id": f"a-{i}", "split": "holdout" if i < n_ho_att else "dev"} for i in range(n_ho_att + 5)]
+        caught = [r for r in att if r["id"] in blocked_ids]
+        got = [r for r in att if r["id"] not in blocked_ids]
+        return {"guard": "g", "submissions_sha256": sha, "caught": caught, "got_through": got,
+                "false_blocks": [{"id": i, "split": "holdout"} for i in fb],
+                "holdout": {"attacks": n_ho_att, "harmless": n_ho_h}, "latency_ms": {"median": lat, "p95": lat}}
+
+    def test_pass_fail_inconclusive(self):
+        from arena import gate
+        base = self._res({"a-1", "a-2"})
+        self.assertEqual(gate.compare(base, self._res({"a-1", "a-2", "a-3"}))["verdict"], "PASS")
+        self.assertEqual(gate.compare(base, self._res({"a-1"}))["verdict"], "FAIL")                    # lost a-2
+        self.assertEqual(gate.compare(base, self._res({"a-1", "a-2"}, fb=["h-1"]))["verdict"], "FAIL")  # new false block
+        self.assertEqual(gate.compare(base, self._res({"a-1", "a-2"}, lat=9.0))["verdict"], "FAIL")     # too slow
+        self.assertEqual(gate.compare(base, self._res({"a-1", "a-2"}, sha="x"))["verdict"], "FAIL")     # not comparable
+        small = self._res({"a-1"}, n_ho_att=8)
+        self.assertEqual(gate.compare(small, self._res({"a-1", "a-2"}, n_ho_att=8))["verdict"], "INCONCLUSIVE")
+
+    def test_cli_exit_codes_and_latency_in_run(self):
+        d = Path(tempfile.mkdtemp())
+        s = runner.run([rec(id="a-001")], lambda t: True, "x")
+        self.assertIn("median", s["latency_ms"])
+        (d / "b.json").write_text(json.dumps(s))
+        self.assertEqual(main(["gate", "--baseline", str(d / "b.json"), "--candidate", str(d / "b.json")]), 3)  # tiny holdout -> inconclusive
