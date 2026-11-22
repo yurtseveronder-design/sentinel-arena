@@ -1,0 +1,23 @@
+{
+  "guard": "ai-sentinel 1.2.0 rules + sentinel-semantic 0.2.0 keyword layer",
+  "candidates": [
+    {
+      "phrase": "https evil example",
+      "support": [
+        "seed-a-015",
+        "seed-a-016"
+      ]
+    }
+  ],
+  "effect": {
+    "dev": {
+      "newly_stopped": 2,
+      "new_false_blocks": 0
+    },
+    "holdout": {
+      "newly_stopped": 0,
+      "new_false_blocks": 0
+    }
+  },
+  "note": "Mined from dev gaps only. Not applied anywhere. Review, then test with: arena run --guard overlay:<this file>, then arena gate."
+}
