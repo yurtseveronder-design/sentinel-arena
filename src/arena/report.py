@@ -28,6 +28,7 @@ def _list(rows):
 
 def html_report(s: dict) -> str:
     a, c, sd = s["all"], s["community"], s["seed"]
+    dv, ho = s["dev"], s["holdout"]
     types = "".join(f"<tr><td>{html.escape(ATTACK_TYPES.get(t, t))}</td><td class=n>{v['blocked']} of {v['attacks']}</td></tr>" for t, v in sorted(s["by_type"].items()))
     return f"""<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Sentinel Arena</title><style>{CSS}</style></head><body>
@@ -39,7 +40,10 @@ def html_report(s: dict) -> str:
 <table><tr><th></th><th>Attacks stopped</th><th>Harmless wrongly blocked</th></tr>
 <tr><td>Community submissions</td><td class=n>{c['attacks_blocked']} of {c['attacks']} ({_pct(c['catch_rate'])})</td><td class=n>{c['harmless_blocked']} of {c['harmless']} ({_pct(c['false_block_rate'])})</td></tr>
 <tr><td>Seed (builder-written)</td><td class=n>{sd['attacks_blocked']} of {sd['attacks']} ({_pct(sd['catch_rate'])})</td><td class=n>{sd['harmless_blocked']} of {sd['harmless']} ({_pct(sd['false_block_rate'])})</td></tr>
-<tr><td>All</td><td class=n>{a['attacks_blocked']} of {a['attacks']} ({_pct(a['catch_rate'])})</td><td class=n>{a['harmless_blocked']} of {a['harmless']} ({_pct(a['false_block_rate'])})</td></tr></table>
+<tr><td>All</td><td class=n>{a['attacks_blocked']} of {a['attacks']} ({_pct(a['catch_rate'])})</td><td class=n>{a['harmless_blocked']} of {a['harmless']} ({_pct(a['false_block_rate'])})</td></tr>
+<tr><td>&nbsp;&nbsp;of which dev split</td><td class=n>{dv['attacks_blocked']} of {dv['attacks']} ({_pct(dv['catch_rate'])})</td><td class=n>{dv['harmless_blocked']} of {dv['harmless']} ({_pct(dv['false_block_rate'])})</td></tr>
+<tr><td>&nbsp;&nbsp;of which holdout split</td><td class=n>{ho['attacks_blocked']} of {ho['attacks']} ({_pct(ho['catch_rate'])})</td><td class=n>{ho['harmless_blocked']} of {ho['harmless']} ({_pct(ho['false_block_rate'])})</td></tr></table>
+<p><small>The split is fixed by a hash of each id (about 20% holdout). Any tuning of a guard should look at dev only; holdout is for checking whether it helped. With few entries both are noisy.</small></p>
 <h2>By attack type</h2><table><tr><th>Type</th><th>Stopped</th></tr>{types}</table>
 <h2>Attacks that got through ({len(s['got_through'])})</h2>{_list(s['got_through'])}
 <h2>Harmless prompts wrongly blocked ({len(s['false_blocks'])})</h2>{_list(s['false_blocks'])}
@@ -50,10 +54,13 @@ def html_report(s: dict) -> str:
 
 def markdown_summary(s: dict) -> str:
     a, c, sd = s["all"], s["community"], s["seed"]
+    dv, ho = s["dev"], s["holdout"]
     return "\n".join([
         f"**Guard:** {s['guard']}  ", f"**Generated:** {s['generated_utc']} UTC", "",
         "| | Attacks stopped | Harmless wrongly blocked |", "|---|---|---|",
         f"| Community | {c['attacks_blocked']}/{c['attacks']} ({_pct(c['catch_rate'])}) | {c['harmless_blocked']}/{c['harmless']} ({_pct(c['false_block_rate'])}) |",
         f"| Seed (builder-written) | {sd['attacks_blocked']}/{sd['attacks']} ({_pct(sd['catch_rate'])}) | {sd['harmless_blocked']}/{sd['harmless']} ({_pct(sd['false_block_rate'])}) |",
         f"| All | {a['attacks_blocked']}/{a['attacks']} ({_pct(a['catch_rate'])}) | {a['harmless_blocked']}/{a['harmless']} ({_pct(a['false_block_rate'])}) |",
+        f"| dev split | {dv['attacks_blocked']}/{dv['attacks']} ({_pct(dv['catch_rate'])}) | {dv['harmless_blocked']}/{dv['harmless']} ({_pct(dv['false_block_rate'])}) |",
+        f"| holdout split | {ho['attacks_blocked']}/{ho['attacks']} ({_pct(ho['catch_rate'])}) | {ho['harmless_blocked']}/{ho['harmless']} ({_pct(ho['false_block_rate'])}) |",
         "", f"Got through: {len(s['got_through'])} attacks. Wrongly blocked: {len(s['false_blocks'])} harmless prompts."])

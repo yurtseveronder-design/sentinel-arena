@@ -1,4 +1,5 @@
 """arena validate [dir]                      check submissions only (exit 1 on a bad file)
+arena digest                                 compare with the last snapshot, write history/ and known-gaps.jsonl
 arena run --guard sentinel-local --out site  score submissions, write site/index.html and site/results.json
 Exit codes: 0 ok, 1 invalid submissions, 2 setup/guard error (no verdict is never treated as a pass)."""
 from __future__ import annotations
@@ -8,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import guards, report
+from . import digest, guards, report
 from .runner import run
 from .schema import SubmissionError, load_submissions
 
@@ -22,7 +23,23 @@ def main(argv=None) -> int:
     r.add_argument("--dir", default="submissions")
     r.add_argument("--guard", default="sentinel-local")
     r.add_argument("--out", default="site")
+    d = sub.add_parser("digest")
+    d.add_argument("--results", default="site/results.json")
+    d.add_argument("--history", default="history")
+    d.add_argument("--gaps", default="known-gaps.jsonl")
+    d.add_argument("--date", default=None)
     a = p.parse_args(argv)
+    if a.cmd == "digest":
+        import datetime
+        try:
+            res = json.loads(Path(a.results).read_text(encoding="utf-8"))
+            date = a.date or datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+            md, changed = digest.build(res, Path(a.history), Path(a.gaps), date)
+        except (OSError, ValueError, KeyError) as e:
+            print(f"setup error: {e}", file=sys.stderr)
+            return 2
+        print(md)
+        return 0
     try:
         records = load_submissions(a.dir)
     except SubmissionError as e:

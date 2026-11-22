@@ -66,3 +66,41 @@ class CliTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DigestTests(unittest.TestCase):
+    def _res(self, got, fb=(), guard="g", sha="s"):
+        from arena.schema import split_of
+        def row(i, kind):
+            return {"id": i, "kind": kind, "type": "plain" if kind == "harmless" else "direct-override", "split": split_of(i), "origin": "seed", "text": "t", "author": "a"}
+        z = {"attacks": 0, "attacks_blocked": 0, "catch_rate": None, "harmless": 0, "harmless_blocked": 0, "false_block_rate": None}
+        return {"guard": guard, "submissions_sha256": sha, "all": z, "community": z, "seed": z, "dev": z, "holdout": z,
+                "got_through": [row(i, "attack") for i in got], "false_blocks": [row(i, "harmless") for i in fb]}
+
+    def test_first_new_fixed_and_no_change(self):
+        from arena import digest
+        d = Path(tempfile.mkdtemp())
+        h, g = d / "h", d / "gaps.jsonl"
+        md, ch = digest.build(self._res(["a-001", "a-002"]), h, g, "2026-01-01")
+        self.assertTrue(ch); self.assertIn("First snapshot", md)
+        md, ch = digest.build(self._res(["a-001", "a-002"]), h, g, "2026-01-08")
+        self.assertFalse(ch); self.assertIn("No change", md)
+        self.assertEqual(len(list(h.glob("*.json"))), 1)
+        md, ch = digest.build(self._res(["a-002", "a-003"], fb=["h-001"]), h, g, "2026-01-15")
+        self.assertTrue(ch); self.assertIn("NEW got_through `a-003`", md); self.assertIn("fixed `a-001`", md); self.assertIn("NEW false_block `h-001`", md)
+        first = {json.loads(l)["id"]: json.loads(l)["first_seen"] for l in g.read_text().splitlines()}
+        self.assertEqual(first["a-002"], "2026-01-01"); self.assertEqual(first["a-003"], "2026-01-15")
+
+    def test_guard_change_is_flagged(self):
+        from arena import digest
+        d = Path(tempfile.mkdtemp())
+        digest.build(self._res(["a-001"]), d / "h", d / "g", "2026-01-01")
+        md, ch = digest.build(self._res(["a-001"], guard="other"), d / "h", d / "g", "2026-01-08")
+        self.assertTrue(ch); self.assertIn("Guard changed", md)
+
+    def test_split_is_deterministic_and_about_a_fifth(self):
+        from arena.schema import split_of
+        ids = [f"x-{i:04d}" for i in range(2000)]
+        self.assertEqual([split_of(i) for i in ids], [split_of(i) for i in ids])
+        share = sum(split_of(i) == "holdout" for i in ids) / len(ids)
+        self.assertTrue(0.15 < share < 0.25, share)

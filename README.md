@@ -25,6 +25,16 @@ arena run --guard sentinel-local --out site   # open site/index.html
 python -m unittest discover -s tests -t .
 ```
 
+## Weekly digest (read-only)
+
+A scheduled job (`.github/workflows/digest.yml`, Mondays, or run it by hand) scores everything again and compares with the last snapshot. If anything changed it commits `history/<date>.json` and `known-gaps.jsonl` (every attack that currently gets through and every harmless prompt wrongly blocked, with the date first seen) and opens an issue for a human to review. It never changes a guard or its rules.
+
+Each submission is assigned to a `dev` or `holdout` split by a hash of its id (about 20% holdout; submitters cannot choose). If you ever tune or draft rules from these gaps, use `dev` only and use `holdout` to check whether it helped. Be careful anyway: the attacks are public, so a rising score can mean overfitting.
+
+```bash
+arena digest --results site/results.json   # after `arena run --out site`
+```
+
 ## Limits (read these)
 
 - Results are a snapshot of one guard version on public, self-selected prompts. They are **not** a security certificate and say nothing about a different configuration or a real LLM behind the guard.

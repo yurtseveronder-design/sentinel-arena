@@ -1,6 +1,7 @@
 """Submission format and validation. One JSON object per line in submissions/*.jsonl."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -83,3 +84,9 @@ def load_submissions(directory: str | Path) -> list[dict]:
     if not records:
         raise SubmissionError(f"no submissions found in {directory}")
     return records
+
+
+def split_of(sub_id: str) -> str:
+    """Deterministic 20% holdout chosen by hashing the id, so submitters cannot choose their split.
+    Anything that drafts or tunes rules must use 'dev' only; 'holdout' is for checking."""
+    return "holdout" if int(hashlib.sha256(sub_id.encode()).hexdigest()[:8], 16) % 5 == 0 else "dev"

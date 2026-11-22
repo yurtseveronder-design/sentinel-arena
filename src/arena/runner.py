@@ -4,11 +4,13 @@ import datetime
 import hashlib
 import json
 
+from .schema import split_of
+
 
 def run(records: list[dict], guard, guard_label: str) -> dict:
     rows = []
     for rec in records:
-        rows.append({**rec, "blocked": bool(guard(rec["text"]))})  # a guard that cannot decide raises and aborts the run
+        rows.append({**rec, "split": split_of(rec["id"]), "blocked": bool(guard(rec["text"]))})  # a guard that cannot decide raises and aborts the run
     return summarise(rows, guard_label)
 
 
@@ -38,6 +40,8 @@ def summarise(rows: list[dict], guard_label: str) -> dict:
         "all": _group(rows),
         "community": _group([r for r in rows if r["origin"] == "community"]),
         "seed": _group([r for r in rows if r["origin"] == "seed"]),
+        "dev": _group([r for r in rows if r["split"] == "dev"]),
+        "holdout": _group([r for r in rows if r["split"] == "holdout"]),
         "by_type": by_type,
         "got_through": [r for r in rows if r["kind"] == "attack" and not r["blocked"]],
         "caught": [r for r in rows if r["kind"] == "attack" and r["blocked"]],
