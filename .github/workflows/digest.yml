@@ -19,20 +19,31 @@ jobs:
           pip install .
           pip install "git+https://github.com/yurtseveronder-design/ai-sentinel.git" "git+https://github.com/yurtseveronder-design/sentinel-semantic.git"
       - name: Score
+        env:
+          ARENA_SPLIT_SALT: ${{ secrets.ARENA_SPLIT_SALT }}
         run: arena run --guard sentinel-local --out site
       - name: Digest (read-only; changes no guard)
+        env:
+          ARENA_SPLIT_SALT: ${{ secrets.ARENA_SPLIT_SALT }}
         run: arena digest --results site/results.json --history history --gaps known-gaps.jsonl | tee digest.md
       - name: Propose candidate block-phrases (dev gaps only; applied nowhere)
+        env:
+          ARENA_SPLIT_SALT: ${{ secrets.ARENA_SPLIT_SALT }}
         run: |
           arena propose --gaps known-gaps.jsonl --out proposals/candidates.json | tee -a digest.md
           echo >> digest.md
-          echo "Candidates are in proposals/candidates.json. Test with: arena run --guard overlay:proposals/candidates.json, then arena gate. Treat them as suggestions: they are mined from the project builder's own seed wording and can simply memorise it." >> digest.md
+          echo "Candidates are in the workflow artifact proposals (not committed to the repository). Test with: arena run --guard overlay:proposals/candidates.json, then arena gate. Treat them as suggestions: they are mined from the project builder's own seed wording and can simply memorise it." >> digest.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: proposals
+          path: proposals/
+          if-no-files-found: ignore
       - name: Commit snapshot if anything changed
         id: commit
         run: |
           git config user.name "arena-digest"
           git config user.email "arena-digest@users.noreply.github.com"
-          git add history known-gaps.jsonl proposals
+          git add history known-gaps.jsonl   # measurement data only; rule candidates are never committed by this job
           if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; else
             git commit -m "Digest snapshot $(date -u +%F)" && git push && echo "changed=true" >> "$GITHUB_OUTPUT"; fi
       - name: Open an issue for a human to review

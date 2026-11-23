@@ -86,8 +86,8 @@ def main(argv=None) -> int:
             return 2
         out = Path(a.out)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps({"guard": label, "candidates": cands, "effect": ev,
-                                   "note": "Mined from dev gaps only. Not applied anywhere. Review, then test with: arena run --guard overlay:<this file>, then arena gate."}, indent=2), encoding="utf-8")
+        out.write_text(json.dumps({"guard": label, "reviewed": False, "candidates": cands, "effect": ev,
+                                   "note": "Mined from dev gaps only. Not applied anywhere. A human must review it and set \"reviewed\": true before it means anything. Test with: arena run --guard overlay:<this file>, then arena gate."}, indent=2), encoding="utf-8")
         print(f"{len(cands)} candidate phrase(s) from dev gaps. Effect if applied as an overlay: {json.dumps(ev)}")
         return 0
     if a.cmd == "gate":

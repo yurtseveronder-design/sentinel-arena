@@ -86,7 +86,13 @@ def load_submissions(directory: str | Path) -> list[dict]:
     return records
 
 
-def split_of(sub_id: str) -> str:
-    """Deterministic 20% holdout chosen by hashing the id, so submitters cannot choose their split.
-    Anything that drafts or tunes rules must use 'dev' only; 'holdout' is for checking."""
-    return "holdout" if int(hashlib.sha256(sub_id.encode()).hexdigest()[:8], 16) % 5 == 0 else "dev"
+def split_of(text: str, salt: str | None = None) -> str:
+    """Deterministic 20% holdout, chosen by a hash of the prompt TEXT plus a salt (not by the id the submitter writes).
+    If the repository secret ARENA_SPLIT_SALT is set (passed to CI as the environment variable of the same name),
+    nobody can predict or steer which side a new prompt lands on; without it the salt is public, and a submitter can
+    still try small rewordings until one lands where they want. Anything that drafts or tunes rules must use 'dev'
+    only; 'holdout' is for checking."""
+    import os
+    key = salt if salt is not None else os.environ.get("ARENA_SPLIT_SALT", "") or "sentinel-arena-public-salt"
+    norm = " ".join(re.findall(r"[a-z0-9']+", text.lower()))
+    return "holdout" if int(hashlib.sha256((key + "\n" + norm).encode()).hexdigest()[:8], 16) % 5 == 0 else "dev"

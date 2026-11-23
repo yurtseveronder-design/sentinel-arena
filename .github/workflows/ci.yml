@@ -24,6 +24,8 @@ jobs:
       - name: Validate submissions
         run: arena validate submissions
       - name: Score submissions against the guard
+        env:
+          ARENA_SPLIT_SALT: ${{ secrets.ARENA_SPLIT_SALT }}
         run: arena run --guard sentinel-local --out site | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-pages-artifact@v3
         with:

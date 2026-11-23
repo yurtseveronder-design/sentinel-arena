@@ -15,7 +15,7 @@ def run(records: list[dict], guard, guard_label: str) -> dict:
         t0 = time.perf_counter()
         blocked = bool(guard(rec["text"]))  # a guard that cannot decide raises and aborts the run
         times.append((time.perf_counter() - t0) * 1000)
-        rows.append({**rec, "split": split_of(rec["id"]), "blocked": blocked})
+        rows.append({**rec, "split": split_of(rec["text"]), "blocked": blocked})
     out = summarise(rows, guard_label)
     ts = sorted(times)
     out["latency_ms"] = {"median": round(statistics.median(ts), 3), "p95": round(ts[min(len(ts) - 1, int(len(ts) * 0.95))], 3)}

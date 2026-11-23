@@ -39,12 +39,12 @@ Run the arena once per guard into two folders, then:
 arena gate --baseline guard-a/results.json --candidate guard-b/results.json
 ```
 
-The gate fails if the candidate lets through an attack the baseline stopped, adds a wrongly blocked harmless prompt, or is much slower. It returns INCONCLUSIVE when the holdout sample is too small to decide, which is the usual answer today.
+The gate fails if the candidate lets through an attack the baseline stopped, adds a wrongly blocked harmless prompt, is much slower, or stops no additional holdout attack. It returns INCONCLUSIVE when the holdout sample is too small to decide, which is the usual answer today.
 
 ## 4. Read the result honestly
 
 - **Both numbers matter.** A guard that blocks everything scores 100% on attacks and fails the harmless prompts.
-- **The attacks are public.** Tuning your guard to this set will raise your score without making it more robust. Use the `dev` split (shown on the results page) for any tuning and treat `holdout` only as a check. About 20% of entries are holdout, chosen by a hash of the id.
+- **The attacks are public.** Tuning your guard to this set will raise your score without making it more robust. Use the `dev` split (shown on the results page) for any tuning and treat `holdout` only as a check. About 20% of entries are holdout, chosen by a hash of the prompt text plus a salt.
 - **Most seed attacks were written by the project builder** and are not independent. Community entries are reported separately.
 - **Small numbers are noisy.** With a few dozen entries, a difference of one or two prompts is not a real difference.
 - **Prompts only.** This does not test retrieval pipelines, tool use or a real model behind the guard.

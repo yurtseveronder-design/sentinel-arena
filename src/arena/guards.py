@@ -85,7 +85,8 @@ def overlay(spec: str) -> tuple[Guard, str]:
     base, label = sentinel_local()
     data = _json.loads(Path(spec).read_text(encoding="utf-8"))
     phrases = [c["phrase"] if isinstance(c, dict) else c for c in data["candidates"]]
-    return overlay_guard(base, phrases), f"{label} + overlay of {len(phrases)} reviewed phrase(s)"
+    status = "reviewed by a human" if data.get("reviewed") is True else "NOT reviewed"
+    return overlay_guard(base, phrases), f"{label} + overlay of {len(phrases)} phrase(s), {status}"
 
 
 def build(spec: str) -> tuple[Guard, str]:

@@ -1,6 +1,6 @@
 """Slow learning plane, step 1: propose candidate block-phrases from DEV gaps only. Deterministic; no LLM, no network.
 A candidate is a word n-gram that (a) appears in at least `min_support` distinct dev attacks that currently get through,
-(b) appears in NO harmless prompt (any split), and (c) is not made only of common words. Candidates are only ever
+(b) appears in NO dev harmless prompt (holdout harmless prompts are kept out of mining and only checked later by the gate), and (c) is not made only of common words. Candidates are only ever
 used as an additive overlay (they can add blocks, never allow anything) and must pass `arena gate` and human review."""
 from __future__ import annotations
 
@@ -22,8 +22,10 @@ def _grams(text: str, lo: int, hi: int) -> set[str]:
 
 
 def mine(records: list[dict], gap_ids: set[str], min_support: int = 2, lo: int = 2, hi: int = 4) -> list[dict]:
-    dev_gaps = [r for r in records if r["kind"] == "attack" and r["id"] in gap_ids and split_of(r["id"]) == "dev"]
-    harmless = [normalise(r["text"]) for r in records if r["kind"] == "harmless"]
+    dev_gaps = [r for r in records if r["kind"] == "attack" and r["id"] in gap_ids and split_of(r["text"]) == "dev"]
+    # harmless prompts from the holdout split are NOT used here: the holdout must not shape which phrases survive.
+    # The gate checks the candidates against them afterwards.
+    harmless = [normalise(r["text"]) for r in records if r["kind"] == "harmless" and split_of(r["text"]) == "dev"]
     support: dict[str, set[str]] = {}
     for r in dev_gaps:
         for g in _grams(r["text"], lo, hi):
@@ -65,7 +67,7 @@ def evaluate(records, base_guard, candidates: list[dict]) -> dict:
     ov = overlay_guard(base_guard, phrases)
     res = {"dev": {"newly_stopped": 0, "new_false_blocks": 0}, "holdout": {"newly_stopped": 0, "new_false_blocks": 0}}
     for r in records:
-        sp = split_of(r["id"])
+        sp = split_of(r["text"])
         b, o = base_guard(r["text"]), ov(r["text"])
         if r["kind"] == "attack" and o and not b:
             res[sp]["newly_stopped"] += 1

@@ -43,7 +43,7 @@ def html_report(s: dict) -> str:
 <tr><td>All</td><td class=n>{a['attacks_blocked']} of {a['attacks']} ({_pct(a['catch_rate'])})</td><td class=n>{a['harmless_blocked']} of {a['harmless']} ({_pct(a['false_block_rate'])})</td></tr>
 <tr><td>&nbsp;&nbsp;of which dev split</td><td class=n>{dv['attacks_blocked']} of {dv['attacks']} ({_pct(dv['catch_rate'])})</td><td class=n>{dv['harmless_blocked']} of {dv['harmless']} ({_pct(dv['false_block_rate'])})</td></tr>
 <tr><td>&nbsp;&nbsp;of which holdout split</td><td class=n>{ho['attacks_blocked']} of {ho['attacks']} ({_pct(ho['catch_rate'])})</td><td class=n>{ho['harmless_blocked']} of {ho['harmless']} ({_pct(ho['false_block_rate'])})</td></tr></table>
-<p><small>The split is fixed by a hash of each id (about 20% holdout). Any tuning of a guard should look at dev only; holdout is for checking whether it helped. With few entries both are noisy.</small></p>
+<p><small>The split is fixed by a hash of each prompt's text plus a salt (about 20% holdout). Any tuning of a guard should look at dev only; holdout is for checking whether it helped. With few entries both are noisy.</small></p>
 <h2>By attack type</h2><table><tr><th>Type</th><th>Stopped</th></tr>{types}</table>
 <h2>Attacks that got through ({len(s['got_through'])})</h2>{_list(s['got_through'])}
 <h2>Harmless prompts wrongly blocked ({len(s['false_blocks'])})</h2>{_list(s['false_blocks'])}
